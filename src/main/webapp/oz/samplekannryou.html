@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html style="height:100%" >
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"  charset="UTF-8" />
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" type="text/css"/>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="http://192.168.1.51:9999/kissco/oz/ui.dynatree.css" type="text/css"/>
+<script type="text/javascript" src="http://192.168.1.51:9999/kissco/oz/jquery.dynatree.js" charset="utf-8"></script>
+<script type="text/javascript" src="http://192.168.1.51:9999/kissco/oz/OZJSViewer.js" charset="utf-8"></script>
+
+</head>
+<body style="width:98%;height:98%">
+<div id="OZViewer" style="width:98%;height:98%"></div>
+<script type="text/javascript" >
+	var mdialog;
+	var tmp = window.location;
+	var rid;
+	var sort;
+	var number;
+	var oz;
+	var name = encodeURIComponent('_完了');
+	tmp = String(tmp).split(/[?=&]/);
+	sort= tmp[2]+'.ozr';
+	rid = tmp[4];
+	number = tmp[6];
+	
+
+   function SetOZParamters_OZViewer(){
+		oz = document.getElementById("OZViewer");
+		oz.sendToActionScript("connection.servlet","http://192.168.1.51:9999/kissco/server");
+		oz.sendToActionScript("connection.reportname", sort);
+		oz.sendToActionScript("connection.id", "admin");
+		oz.sendToActionScript("connection.password", "admin");
+		oz.sendToActionScript("connection.pcount", "1");
+		oz.sendToActionScript("connection.args1", "report="+rid);
+		
+		oz.sendToActionScript("export.format", "pdf");
+		oz.sendToActionScript("export.applyformat", "pdf, png, jpg, ozd");
+		oz.sendToActionScript("etoolbar.addmemo", "disable");
+		oz.sendToActionScript("toolbar.edittool", "disable");
+		
+		oz.sendToActionScript("pdf.savecomment", "true");
+		oz.sendToActionScript("png.savecomment", "true");
+		oz.sendToActionScript("jpg.savecomment", "true");
+		
+		oz.sendToActionScript("pdf.filename", number + name);
+		oz.sendToActionScript("png.filename", number + name);
+		oz.sendToActionScript("jpg.filename", number + name);
+	   
+       return true;
+   }
+   
+   start_ozjs("OZViewer","http://192.168.1.51:9999/kissco/oz/");
+</script>
+</body>
+</html>

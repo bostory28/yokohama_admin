@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jp.co.kissco.dao.AdminInterfaceDao">
+	<select id="adminlist" resultType="jp.co.kissco.vo.UsersVo">
+		SELECT * FROM USERS WHERE NOT ADMIN=0 ORDER BY CREATED_AT
+	</select>
+	<select id="oneMember" resultType="jp.co.kissco.vo.UsersVo" parameterType="String">
+		SELECT * FROM USERS WHERE ID=#{id} AND NOT ADMIN=0
+	</select>
+	<select id="testeelist" resultType="jp.co.kissco.vo.JoinTesteeVo">
+		 select reports.name as category, user_report.user_id as mail, users.kanji_name as name from reports,user_report,users 
+		 where reports.id=user_report.report_id and user_report.user_id=users.id
+	</select>
+	<update id="edit" parameterType="jp.co.kissco.vo.UsersVo">
+		UPDATE USERS SET PASS=#{pass},ADMIN=#{admin} WHERE ID=#{id} 
+	</update>
+	<insert id="add" parameterType="jp.co.kissco.vo.UsersVo">
+		INSERT INTO USERS(ID,PASS,KANJI_NAME,KANA_NAME,ADMIN) VALUES 
+		(#{id},#{pass},#{kanji_name},#{kana_name},#{admin})
+	</insert>
+	<update id="editmypage" parameterType="jp.co.kissco.vo.UsersVo">
+		UPDATE USERS SET KANJI_NAME=#{kanji_name}, KANA_NAME=#{kana_name} WHERE ID=#{id}
+	</update>
+	<update id="editpw" parameterType="jp.co.kissco.vo.UsersVo">
+		UPDATE USERS SET PASS=#{pass} WHERE ID=#{id}
+	</update>
+		<select id="getTotalRecordCount" resultType="java.lang.Integer" parameterType="hashmap">
+		SELECT count(*) FROM users WHERE not admin=0 
+		<if test="filter!=null">
+			<if test="filter=='admin'">
+				and kanji_name like '%'||#{text}||'%'
+			</if>
+			<if test="filter!='admin'">
+				and id like '%'||#{text}||'%' 
+			</if>
+		</if>
+	</select>
+	<select id="getTotalPayCount" resultType="java.lang.Integer" parameterType="hashmap">
+		select count(*) from payment,users,reports,user_report where user_report.report_id=payment.report_id and 
+		user_report.user_id=users.id and reports.id=user_report.report_id 
+		 <if test="filter!=null">
+			<if test="filter=='kanji_name'">
+				and users.kanji_name like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='report_id'">
+				and reports.number like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='deposit_date'">
+				and payment.deposit_date between to_date (#{startdate},'YYYY/MM/DD') 
+				and to_date(#{enddate},'YYYY/MM/DD')
+			</if>
+			<if test="filter=='id'">
+				and users.id like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='payMeans'">
+				and payment.means like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='statePay'">
+				<if test="text=='未納'">
+					and payment.ispaid=false
+				</if>
+				<if test="text=='完納'">
+					and payment.ispaid=true
+				</if> 
+			</if>
+		</if>
+	</select>
+	<select id="getPayRecord" resultType="jp.co.kissco.vo.PaymentVo" parameterType="hashmap">
+		select users.kanji_name as kanji_name,users.id as id,reports.number as number,payment.report_id as report_id,payment.ispaid as ispayed,payment.means as means,
+		payment.deposit_date as deposit_date,reports.name as report_type from payment,users,reports,user_report 
+		where user_report.report_id=payment.report_id and user_report.user_id=users.id and reports.id=user_report.report_id 
+		 <if test="filter!=null">
+			<if test="filter=='kanji_name'">
+				and users.kanji_name like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='report_id'">
+				and reports.number like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='deposit_date'">
+				and payment.deposit_date between to_date (#{startdate},'YYYY/MM/DD') 
+				and to_date(#{enddate},'YYYY/MM/DD')
+			</if>
+			<if test="filter=='payMeans'">
+				and payment.means like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='id'">
+				and users.id like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='statePay'">
+				<if test="text=='未納'">
+					and payment.ispaid=false
+				</if>
+				<if test="text=='完納'">
+					and payment.ispaid=true
+				</if> 
+			</if>
+		</if>
+		<trim prefix="ORDER BY">
+			${array}
+			<if test="arrayOrder != null">
+				desc
+			</if>
+		</trim>
+		LIMIT #{countPerPage} OFFSET #{startRecord}
+	</select>
+	<select id="checkpay" resultType="jp.co.kissco.vo.PaymentVo" parameterType="int">
+		select payment.report_id,payment.ispaid as ispayed,payment.means,payment.deposit_date,reports.number as number 
+		from payment, reports where reports.id=#{rid} and payment.report_id = reports.id
+	</select>
+	<update id="editpay" parameterType="jp.co.kissco.vo.PaymentVo">
+		UPDATE PAYMENT SET ISPAID=#{ispayed}, means=#{means}, deposit_date=
+		<if test="ispayed==true">
+		current_date
+		</if>
+		<if test="ispayed==false">
+		#{deposit_date}
+		</if> 
+		where report_id=#{report_id}
+	</update>
+	<update id="editreportstate" parameterType="jp.co.kissco.vo.UsersVo">
+		UPDATE REPORTS SET STATE=#{report_state} where id=#{report_id}
+	</update>
+	<select id="getTotalTesteeCount" resultType="java.lang.Integer" parameterType="hashmap">
+		select count(*) from ( 
+   select u.id, u.kanji_name,array_agg(r.number) as rrr,array_agg(r.name) as arr, array_agg(r.state) as arr1,array_agg(ur.report_id) as arr2 from users u, reports r, user_report ur 
+   where u.id = ur.user_id and ur.report_id = r.id group by u.id) as ar 
+		 <if test="filter!=null">
+			<if test="filter=='admin'">
+				where kanji_name like '%'||#{text}||'%' 
+			</if>
+			<if test="filter!='admin'">
+				where ar.id like '%'||#{text}||'%' 
+			</if>
+		</if>
+	</select>
+	<select id="getPagingRecord" parameterType="hashmap" resultType="jp.co.kissco.vo.UsersVo">
+		SELECT * FROM users WHERE not admin=0 
+		<if test="filter!=null">
+			<if test="filter=='admin'">
+				and kanji_name like '%'||#{text}||'%' 
+			</if>
+			<if test="filter!='admin'">
+				and id like '%'||#{text}||'%' 
+			</if>
+		</if>
+		<trim prefix="ORDER BY">
+			${array}
+			<if test="arrayOrder != null">
+				desc
+			</if>
+		</trim> 
+		LIMIT #{countPerPage} OFFSET #{startRecord}
+	</select>
+	<select id="getJoinPagingRecord" parameterType="hashmap" resultType="jp.co.kissco.vo.JoinTesteeVo">
+    select id, kanji_name as name, rrr[1] as number, arr[1] as reportname1, arr[2] as reportname2, arr[3] as reportname3, arr[4] as reportname4,arr[5] as reportname5,arr[6] as reportname6, 
+   arr1[1] as state1, arr1[2] as state2,arr1[3] as state3,arr1[4] as state4,arr1[5] as state5,arr1[6] as state6,
+   arr2[1] as report1,arr2[2] as report2,arr2[3] as report3,arr2[4] as report4,arr2[5] as report5,arr2[6] as report6 
+   from ( 
+   select u.id, u.kanji_name,array_agg(r.number) as rrr,array_agg(r.name) as arr, array_agg(r.state) as arr1,array_agg(ur.report_id) as arr2 from users u, reports r, user_report ur 
+   where u.id = ur.user_id and ur.report_id = r.id group by u.id) as ar 
+   <if test="filter!=null">
+			<if test="filter!='admin'">
+				where id like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='admin'">
+				where kanji_name like '%'||#{text}||'%' 
+			</if>
+		</if>
+   <trim prefix="ORDER BY">
+		${array}
+		<if test="arrayOrder != null">
+			desc
+		</if>
+	</trim>
+   LIMIT #{countPerPage} OFFSET #{startRecord}
+	</select>
+	<delete id="delAdmin" parameterType="jp.co.kissco.vo.UsersVo">
+		delete from users where id=#{id}
+	</delete>
+</mapper>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html style="height:100%" >
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"  charset="UTF-8" />
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" type="text/css"/>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="http://192.168.1.51:9999/kissco/oz/ui.dynatree.css" type="text/css"/>
+<script type="text/javascript" src="http://192.168.1.51:9999/kissco/oz/jquery.dynatree.js" charset="utf-8"></script>
+<script type="text/javascript" src="http://192.168.1.51:9999/kissco/oz/OZJSViewer.js" charset="utf-8"></script>
+
+</head>
+<body style="width:98%;height:98%">
+<input type="button" onclick="javascript:dialog()" value="発送">
+<div id="OZViewer" style="width:98%;height:98%"></div>
+<script type="text/javascript" >
+	var mdialog;
+	var tmp = window.location;
+	var rid;
+	var sort;
+	var number;
+	var kanji_name;
+	var uid;
+	var session;
+	var oz;
+	var name = encodeURIComponent('_修正要請');
+	tmp = String(tmp).split(/[?=&]/);
+	sort= tmp[2]+'.ozr';
+	rid = tmp[4];
+	number = tmp[6];
+	kanji_name = decodeURI(tmp[8]);
+	uid = tmp[10];
+	session = tmp[12];
+	
+	$(document).ready(function() {
+		//修正のdialog
+		mdialog = $('.dialog-modify').dialog({
+			autoOpen: false,
+			height: 600,
+			width: 450,
+			modal: true,
+			buttons: {
+				"送信": sendModifyMail,
+				"取り消し": function() {
+					mdialog.dialog("close");
+				},
+			}
+		});
+		//修正メールを送る
+		function sendModifyMail() {
+			document.modifyForm.subject.value=$('#subject_tmp').val();
+			document.modifyForm.body.value=$('#body_tmp').val();
+			document.modifyForm.sort.value=sort;
+			document.modifyForm.rid.value=rid;
+			document.modifyForm.uid.value=uid;
+			document.modifyForm.number.value=number;
+			document.modifyForm.kanji_name.value=kanji_name;
+			document.modifyForm.session.value=session;
+			var modifyForm = $("form[name=modifyForm]").serialize();
+			$.ajax({
+				url: '../sendModifiedOZD',
+				type: 'POST',
+				data: modifyForm,
+				dataType: 'json',
+				success: function() {
+					mdialog.dialog("close");
+					window.opener.document.location.reload();
+					window.close();
+					
+				}
+			});
+		}
+	});
+	function dialog() {
+		$('#recipient').val(uid);
+		$('#sort').val(sort);
+		$('#rid').val(rid);
+		$('#number').val(number);
+		$('#kanji_name').val(kanji_name);
+		$('#body_tmp').val(
+				kanji_name +"様\n\n"
+				+"ご提出頂いた願書のご記入案内に不備がございます。\n\n"
+				+"願書提出Appから「不備」と表示されている願書の\n"
+				+"チェックされている項目をご修正いただき再度提出する\n"
+				+"ようお願い申し上げます。\n\n"
+				+"何かご不明な点等がございましたら、ご遠慮なくお問い合わせください。\n\n"
+				+"<本件に関するお問合わせ先>\n"
+				+"受付担当　Tel:000-000-000"
+			);
+		mdialog.dialog("open");
+	}
+	
+	
+
+   function SetOZParamters_OZViewer(){
+		oz = document.getElementById("OZViewer");
+		oz.sendToActionScript("connection.servlet","http://192.168.1.51:9999/kissco/server");
+		oz.sendToActionScript("connection.reportname", sort);
+		oz.sendToActionScript("connection.id", "admin");
+		oz.sendToActionScript("connection.password", "admin");
+		oz.sendToActionScript("connection.pcount", "1");
+		oz.sendToActionScript("connection.args1", "report="+rid);
+		
+		oz.sendToActionScript("comment.all", "true");
+		
+		oz.sendToActionScript("export.format", "pdf");
+		oz.sendToActionScript("export.applyformat", "pdf, png, jpg");
+		
+		oz.sendToActionScript("pdf.savecomment", "true");
+		oz.sendToActionScript("png.savecomment", "true");
+		oz.sendToActionScript("jpg.savecomment", "true");
+		
+		oz.sendToActionScript("pdf.filename", number + name);
+		oz.sendToActionScript("png.filename", number + name);
+		oz.sendToActionScript("jpg.filename", number + name);
+	   
+       return true;
+   }
+   
+   start_ozjs("OZViewer","http://192.168.1.51:9999/kissco/oz/");
+</script>
+
+	<!-- 修正dialog -->	
+	<div class="dialog-modify" title="不備メール発送">
+		<p class="validateTips"></p>
+		<fieldset>
+			<label for="recipient">宛先</label>
+			<input type="text" name="recipient" id="recipient" value="" style="width: 100%;" readonly="readonly" class="text ui-widget-content ui-corner-all">
+			<span style="line-height: 50%;"><br></span>
+			<label for="title">タイトル</label>
+			<input type="text" name="title" id="subject_tmp" value="入試願書お申し込みについてのご案内" style="width: 100%;" class="text ui-widget-content ui-corner-all">
+			<span style="line-height: 50%;"><br></span>
+			<label for="content">内容</label>
+			<textarea style="width: 100%; font-family: " rows="14" id="body_tmp" class="ui-widget-content ui-corner-all"></textarea>
+			<form name="modifyForm" method="post">
+				<input type="hidden" name="sort">
+				<input type="hidden" name="rid">
+				<input type="hidden" name="number">
+				<input type="hidden" name="kanji_name">
+				<input type="hidden" name="session">
+				
+				
+				<input type="hidden" name="uid">
+				<input type="hidden" name="body">
+				<input type="hidden" name="subject">
+			</form>
+		</fieldset>
+	</div>
+
+</body>
+</html>

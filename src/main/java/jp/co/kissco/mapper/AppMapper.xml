@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jp.co.kissco.dao.AppInterfaceDao">
+
+	<!-- レコードの総数 -->
+	<select id="getTotalRecordCount" parameterType="hashmap" resultType="java.lang.Integer">
+		SELECT
+				count(s.rid) totalRecordsCount
+		FROM
+				(SELECT 
+						r.id rid
+				FROM
+						reports r,
+						user_report ur,
+						users u
+				WHERE
+						r.id = ur.report_id and
+						u.id = ur.user_id and
+						r.state = #{state} 
+						<if test="category != null and category != 'すべて'">
+							and r.name = #{category}
+						</if>
+		<if test="filter!=null">
+			<if test="filter=='report_id'">
+				and r.number like '%'||#{text}||'%'
+			</if>
+			<if test="filter=='kanji_name'">
+				and u.kanji_name like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='enroll_date'">
+				and r.created_at between to_date(#{startdate},'YYYY/MM/DD')
+				and to_date(#{enddate},'YYYY/MM/DD') + 1
+			</if>
+			<if test="filter=='submit_date'">
+				and r.modified_at between to_date(#{startdate},'YYYY/MM/DD')
+				and to_date(#{enddate},'YYYY/MM/DD') + 1 
+			</if>
+			<if test="filter=='id'">
+				and u.id like '%'||#{text}||'%' 
+			</if>
+		</if>
+		) s
+	</select>
+	<!-- admin id search -->
+	<select id="getTotalRecordCount2" parameterType="hashmap" resultType="java.lang.Integer">
+		SELECT
+				count(u.rid) totalRecordsCount
+		FROM
+				(SELECT 
+					r.id rid,
+					r.report,
+					r.name,
+					r.modified_at,
+					r.created_at,
+					u.id uid,
+					u.kanji_name,
+					u.kana_name
+				FROM
+					reports r,
+					user_report ur,
+					users u
+				WHERE
+					r.id = ur.report_id and
+					u.id = ur.user_id and
+					r.state = #{state}
+					<if test="category != null and category != 'すべて'">
+						and r.name = #{category}
+					</if>
+				) as u,
+				(SELECT 
+					r.id rid,
+					u.id uid,
+					u.kanji_name,
+					u.kana_name
+				FROM
+					reports r,
+					user_report ur,
+					users u
+				WHERE
+					r.id = ur.report_id and
+					u.id = ur.admin_id and
+					r.state = #{state}
+					<if test="category != null and category != 'すべて'">
+						and r.name = #{category}
+					</if>
+				) as a
+		WHERE
+			u.rid = a.rid
+			and a.kanji_name like '%'||#{text}||'%'
+	</select>
+	<!-- ページにとってレコード持ってくる -->
+	<select id="getPagingRecord" parameterType="hashmap" resultType="jp.co.kissco.vo.UsersReportsVo">
+		SELECT 
+				r.id rid,
+				r.number number,
+				r.report,
+				r.name,
+				to_date(to_char(r.created_at,'yyyymmdd'),'yyyymmdd') rcreated_at,
+				to_date(to_char(r.modified_at,'yyyymmdd'),'yyyymmdd') modified_at,
+				u.id uid,
+				u.kanji_name,
+				u.kana_name,
+				ur.admin_id
+		FROM
+				reports r,
+				user_report ur,
+				users u
+		WHERE
+				r.id = ur.report_id and
+				u.id = ur.user_id and
+				r.state = #{state}
+				<if test="category != null and category != 'すべて'">
+					and r.name = #{category}
+				</if>
+		<if test="filter!=null">
+			<if test="filter=='report_id'">
+				and r.number like '%'||#{text}||'%'
+			</if>
+			<if test="filter=='kanji_name'">
+				and u.kanji_name like '%'||#{text}||'%' 
+			</if>
+			<if test="filter=='resposible'">
+				and ur.admin_id like '%'||#{text}||'%' 
+			</if>
+				<if test="filter=='enroll_date'">
+				and r.created_at between to_date(#{startdate},'YYYY/MM/DD')
+				and to_date (#{enddate},'YYYY/MM/DD') + 1
+			</if>
+			<if test="filter=='id'">
+				and u.id like '%'||#{text}||'%' 
+			</if>
+		</if>
+		<trim prefix="ORDER BY">
+			${array}
+			<if test="arrayOrder != null">
+				desc
+			</if>
+		</trim>
+		LIMIT #{countPerPage} OFFSET #{startRecord}
+	</select>
+	
+	<!-- 不備、完了の場合レコード -->
+	<select id="getsuffOrInsuffPagingRecord" parameterType="hashmap" resultType="jp.co.kissco.vo.UsersReportsVo">
+		SELECT 
+				u.rid rid,
+				u.number,
+				u.report,
+				u.name,
+				u.kanji_name,
+				u.modifiedozd,
+				to_date(to_char(u.created_at,'yyyymmdd'),'yyyymmdd') rcreated_at,
+				to_date(to_char(u.modified_at,'yyyymmdd'),'yyyymmdd') modified_at,
+				u.uid uid,
+				a.kanji_name akanji_name
+		FROM
+				(SELECT 
+					r.id rid,
+					r.number number,
+					r.report,
+					r.name,
+					r.modified_at,
+					r.modifiedozd,
+					r.created_at,
+					u.id uid,
+					u.kanji_name,
+					u.kana_name
+				FROM
+					reports r,
+					user_report ur,
+					users u
+				WHERE
+					r.id = ur.report_id and
+					u.id = ur.user_id and
+					r.state = #{state}
+					<if test="category != null and category != 'すべて'">
+						and r.name = #{category}
+					</if>
+					<if test="filter!=null">
+						<if test="filter=='report_id'">
+							and r.number like '%'||#{text}||'%'
+						</if>
+						<if test="filter=='kanji_name'">
+							and u.kanji_name like '%'||#{text}||'%' 
+						</if>
+						<if test="filter=='enroll_date'">
+							and r.created_at between to_date(#{startdate},'YYYY/MM/DD')
+							and to_date (#{enddate},'YYYY/MM/DD') + 1 
+						</if>
+						<if test="filter=='submit_date'">
+							and r.modified_at between to_date(#{startdate},'YYYY/MM/DD')
+							and to_date (#{enddate},'YYYY/MM/DD') + 1 
+						</if>
+						<if test="filter=='id'">
+							and u.id like '%'||#{text}||'%' 
+						</if>			
+					</if>
+				) as u,
+				(SELECT 
+					r.id rid,
+					r.number number,
+					r.modifiedozd,
+					u.id uid,
+					u.kanji_name,
+					u.kana_name
+				FROM
+					reports r,
+					user_report ur,
+					users u
+				WHERE
+					r.id = ur.report_id and
+					u.id = ur.admin_id and
+					r.state = #{state}
+					<if test="category != null and category != 'すべて'">
+						and r.name = #{category}
+					</if>
+				) as a
+		WHERE
+			u.rid = a.rid
+			<if test="filter != null and filter=='resposible'">
+				and a.kanji_name like '%'||#{text}||'%'
+			</if>
+		<trim prefix="ORDER BY">
+			${array}
+			<if test="arrayOrder != null">
+				desc
+			</if>
+		</trim>
+		LIMIT #{countPerPage} OFFSET #{startRecord}
+	</select>
+	
+	<!-- 修正、完了ボタンを押すときデータupdate -->
+	<update id="updateDocState" parameterType="hashmap">
+		UPDATE	reports
+		SET 	state = #{changeState},
+				modified_at = now()
+		WHERE	id = #{rid}
+	</update>
+	<!-- 修正、完了ボタンを押すときデータupdate -->
+	<update id="updateOZD" parameterType="hashmap">
+		UPDATE	reports
+		SET 	modifiedozd = #{modifiedozd}
+		WHERE	id = #{rid}
+	</update>
+	
+	<!-- 誰が修正、完了ボタンを押したか記録に残るため -->
+	<update id="updateConfirmAdmin" parameterType="hashmap">
+		UPDATE	user_report
+		SET 	admin_id = #{adminid}
+		WHERE	report_id = #{rid}
+	</update>
+</mapper>

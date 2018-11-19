@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html style="height:100%" >
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"  charset="UTF-8" />
+<script src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" type="text/css"/>
+<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="http://192.168.1.51:9999/kissco/oz/ui.dynatree.css" type="text/css"/>
+<script type="text/javascript" src="http://192.168.1.51:9999/kissco/oz/jquery.dynatree.js" charset="utf-8"></script>
+<script type="text/javascript" src="http://192.168.1.51:9999/kissco/oz/OZJSViewer.js" charset="utf-8"></script>
+
+</head>
+<body style="width:98%;height:98%">
+<div id="OZViewer" style="width:98%;height:98%"></div>
+<script type="text/javascript" >
+	var tmp = window.location;
+	var modifiedozd;
+	var oz;
+	tmp = String(tmp).split(/[?=&]/);
+	modifiedozd = tmp[8];
+
+	function SetOZParamters_OZViewer(){
+		oz = document.getElementById("OZViewer");
+		oz.sendToActionScript("viewer.useprogressbar", "true");
+		oz.sendToActionScript("export.useprogressbar", "true");
+		
+		oz.sendToActionScript("connection.openfile", modifiedozd);
+		
+       return true;
+   }
+   
+   start_ozjs("OZViewer","http://192.168.1.51:9999/kissco/oz/");
+</script>
+
+</body>
+</html>

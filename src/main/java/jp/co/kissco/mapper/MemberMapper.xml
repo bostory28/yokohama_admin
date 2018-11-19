@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jp.co.kissco.dao.MemberInterfaceDao">
+	<select id="oneOfMember" parameterType="jp.co.kissco.vo.UsersVo" resultType="jp.co.kissco.vo.UsersVo">
+		SELECT * FROM USERS WHERE ID = #{id} AND PASS = #{pass} AND (ADMIN = 2 or ADMIN = 1)
+	</select>
+</mapper>
